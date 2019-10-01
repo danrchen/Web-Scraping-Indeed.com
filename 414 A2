@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Sep 9 13:17:36 2019 @author: danchen
+"""
+
+import pandas as pd
+from bs4 import BeautifulSoup
+from requests import get
+from time import time, sleep
+from random import randint
+from warnings import warn
+from IPython.core.display import clear_output
+
+
+# variables used for modifying url
+# query is job titles we are looking for 
+#locations is job locations we are looking for 
+query = ["data analyst","data engineer", "business analyst","data architect"] locations=['baltimore','washington dc']
+
+#header
+headers = {"Accept-Language": "en-US, en;q=0.5"}
+
+
+#mimic human traffic to vary time start_time = time()
+request = 0
+
+#creating lists to store scraped data title = []
+company_name = []
+job_location = []
+
+#loops through site to scrape data and add it to lists for j in query:
+for l in locations:
+response = get("https://www.indeed.com/jobs?q=" + j + "&1=" + l, headers=headers)
+
+#pause the loop sleep(randint(5,12))
+#monitor requests for interruptions
+request += 1
+elapsed_time = time() - start_time
+print('Request:{}; Frequency: {} requests/s'.format(request, request/elapsed_time)) clear_output(wait = True)
+page_html = BeautifulSoup(response.text, 'html.parser')
+
+#variable that contains job listings
+job_containers = page_html.find_all('div', class_ = 'jobsearch-SerpJobCard')
+
+for i in job_containers:
+  if i.find(['div','span'],{'class': {'location'}}) is not None:
+  i.a.get_text().strip() titles = i.div.a.text title.append(titles)
+  Corp=i.find('span',{'class':{'company'}}).text company_name.append(Corp)
+  geo=i.find(['div','span'],{'class': {'location'}}).text job_location.append(geo)
+
+#storing data into data frame
+indeed_data = pd.DataFrame({"Job Position": title, 'Name of Company': company_name, 'Location of Job': job_location})
+print(indeed_data.info())
+indeed_data indeed_data.to_csv("/Users/danchen/Downloads/414Exercise2.csv")
